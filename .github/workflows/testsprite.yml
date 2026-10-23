@@ -86,10 +86,24 @@ jobs:
           --fail-on-skipped
           --summary-file testsprite-summary.json
 
+      - name: Run TestSprite backend tests on this PR's preview
+        if: always()
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.url || github.event.deployment_status.environment_url }}
+        run: >-
+          testsprite ci run
+          --project "c379ce19-cfff-4cf2-93e5-53ad557f04d2"
+          --env "default"
+          --target-url "$PREVIEW_URL"
+          --fail-on-skipped
+          --summary-file testsprite-summary-backend.json
+
       - name: Upload TestSprite report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: testsprite-results
-          path: testsprite-summary.json
+          path: |
+            testsprite-summary.json
+            testsprite-summary-backend.json
           if-no-files-found: ignore
