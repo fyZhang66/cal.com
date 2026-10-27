@@ -12,6 +12,9 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  # Shape C: ci run reads the platform's commit status / check run.
+  statuses: read
+  checks: read
 
 jobs:
   gate:
@@ -75,14 +78,17 @@ jobs:
         id: preview
         run: echo "url=https://cal-com-green-six.vercel.app" >> "$GITHUB_OUTPUT"
 
+      # Shape C: wait for the platform's "Vercel" status on this commit, then
+      # derive the preview address from a pattern. This fork has no per-PR
+      # preview, so the pattern is the shared deployment of main.
       - name: Run TestSprite tests on this PR's preview
-        env:
-          PREVIEW_URL: ${{ steps.preview.outputs.url || github.event.deployment_status.environment_url }}
         run: >-
           testsprite ci run
           --project "13295f0b-4c78-44f1-85ba-b0efac91b79d"
           --env "default"
-          --target-url "$PREVIEW_URL"
+          --wait-for-status "Vercel"
+          --status-timeout 300
+          --target-url-template "https://cal-com-green-six.vercel.app"
           --fail-on-skipped
           --summary-file testsprite-summary.json
 
